@@ -10,6 +10,7 @@
 .nutritional_values {
   display: flex;
   justify-content: space-between;
+  gap: 20px;
   width: 100%;
   margin: 0;
   padding: 0;

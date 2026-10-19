@@ -20,8 +20,15 @@ import {
   NotFound404,
 } from '@pages';
 import { Preloader } from '@ui';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  useLocation,
+  useMatch,
+  useNavigate,
+} from 'react-router-dom';
 
+import type { Location } from 'react-router-dom';
 import type { AppContentProps } from './type';
 import type { TIngredient } from '@utils-types';
 
@@ -38,9 +45,13 @@ const App = (): React.JSX.Element => {
     (state) => state.ingredients.ingredients
   );
 
-  const isIngredientsLoading = useSelector((state) => state.ingredients.isLoading);
+  const isIngredientsLoading = useSelector(
+    (state) => state.ingredients.isLoading
+  );
 
-  const ingredientsError = useSelector((state) => state.ingredients.error);
+  const ingredientsError = useSelector(
+    (state) => state.ingredients.error
+  );
 
   useEffect(() => {
     dispatch(fetchIngredients());
@@ -80,7 +91,9 @@ const AppContent = ({
 
   if (!ingredients.length) {
     return (
-      <p className={`${styles.message} text text_type_main-medium`}>Нет ингредиентов</p>
+      <p className={`${styles.message} text text_type_main-medium`}>
+        Нет ингредиентов
+      </p>
     );
   }
 
@@ -91,7 +104,23 @@ const RouteComponent = (): React.JSX.Element => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const background = location.state?.background;
+  const background = (
+    location.state as { background?: Location } | null
+  )?.background;
+
+  const feedOrderMatch = useMatch('/feed/:number');
+  const profileOrderMatch = useMatch('/profile/orders/:number');
+
+  const number =
+    feedOrderMatch?.params.number ??
+    profileOrderMatch?.params.number;
+
+  const parsedNumber = Number(number);
+
+  const orderTitle =
+    Number.isSafeInteger(parsedNumber) && parsedNumber > 0
+      ? `#${String(parsedNumber).padStart(6, '0')}`
+      : 'Заказ';
 
   const closeModal = (): void => {
     navigate(-1);
@@ -99,7 +128,7 @@ const RouteComponent = (): React.JSX.Element => {
 
   return (
     <>
-      <Routes location={background || location}>
+      <Routes location={background ?? location}>
         <Route path="/" element={<ConstructorPage />} />
 
         <Route path="/feed" element={<Feed />} />
@@ -158,15 +187,46 @@ const RouteComponent = (): React.JSX.Element => {
           }
         />
 
-        <Route path="/ingredients/:id" element={<IngredientDetails />} />
+        <Route
+          path="/ingredients/:id"
+          element={
+            <section className={styles.detailPageWrap}>
+              <h1
+                className={`${styles.detailHeader} text text_type_main-large`}
+              >
+                Детали ингредиента
+              </h1>
+              <IngredientDetails />
+            </section>
+          }
+        />
 
-        <Route path="/feed/:number" element={<OrderInfo />} />
+        <Route
+          path="/feed/:number"
+          element={
+            <section className={`${styles.detailPageWrap} ${styles.orderDetailPage}`}>
+              <h1
+                className={`${styles.detailHeader} text text_type_digits-default`}
+              >
+                {orderTitle}
+              </h1>
+              <OrderInfo />
+            </section>
+          }
+        />
 
         <Route
           path="/profile/orders/:number"
           element={
             <ProtectedRoute>
-              <OrderInfo />
+              <section className={`${styles.detailPageWrap} ${styles.orderDetailPage}`}>
+                <h1
+                className={`${styles.detailHeader} text text_type_digits-default`}
+              >
+                {orderTitle}
+              </h1>
+                <OrderInfo />
+              </section>
             </ProtectedRoute>
           }
         />
@@ -179,7 +239,10 @@ const RouteComponent = (): React.JSX.Element => {
           <Route
             path="/ingredients/:id"
             element={
-              <Modal title="Детали ингредиента" onClose={closeModal}>
+              <Modal
+                title="Детали ингредиента"
+                onClose={closeModal}
+              >
                 <IngredientDetails />
               </Modal>
             }
@@ -188,7 +251,15 @@ const RouteComponent = (): React.JSX.Element => {
           <Route
             path="/feed/:number"
             element={
-              <Modal title="" onClose={closeModal}>
+              <Modal
+                variant="order"
+                title={
+                  <span className="text text_type_digits-default">
+                    {orderTitle}
+                  </span>
+                }
+                onClose={closeModal}
+              >
                 <OrderInfo />
               </Modal>
             }
@@ -198,7 +269,15 @@ const RouteComponent = (): React.JSX.Element => {
             path="/profile/orders/:number"
             element={
               <ProtectedRoute>
-                <Modal title="" onClose={closeModal}>
+                <Modal
+                  variant="order"
+                  title={
+                    <span className="text text_type_digits-default">
+                      {orderTitle}
+                    </span>
+                  }
+                  onClose={closeModal}
+                >
                   <OrderInfo />
                 </Modal>
               </ProtectedRoute>
