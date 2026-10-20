@@ -1,3 +1,4 @@
+
 import { ModalUI } from '@ui';
 import { memo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -10,6 +11,7 @@ export const Modal = memo(function Modal({
   title,
   onClose,
   children,
+  variant = 'default',
 }: TModalProps): React.JSX.Element {
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent): void => {
@@ -17,13 +19,14 @@ export const Modal = memo(function Modal({
     };
 
     document.addEventListener('keydown', handleEsc);
+
     return (): void => {
       document.removeEventListener('keydown', handleEsc);
     };
   }, [onClose]);
 
   return ReactDOM.createPortal(
-    <ModalUI title={title} onClose={onClose}>
+    <ModalUI title={title} onClose={onClose} variant={variant}>
       {children}
     </ModalUI>,
     modalRoot as HTMLDivElement

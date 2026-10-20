@@ -1,37 +1,52 @@
 import { Preloader, OrderInfoUI } from '@ui';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+
+import { useDispatch, useSelector } from '../../services/store';
+import { fetchOrderByNumber } from '../../services/orderDetailsSlice';
 
 import type { TIngredient } from '@utils-types';
 
 export const OrderInfo = (): React.JSX.Element => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0,
-  };
+  const { number } = useParams<{ number: string }>();
+  const dispatch = useDispatch();
 
-  const ingredients: TIngredient[] = [];
+  const orderData = useSelector((state) => state.orderDetails.order);
 
-  /**
-   * использование useMemo не обязательно
-   */
-  /* Готовим данные для отображения */
+  const isLoading = useSelector((state) => state.orderDetails.isLoading);
+
+  const error = useSelector((state) => state.orderDetails.error);
+
+  const ingredients = useSelector((state) => state.ingredients.ingredients);
+
+  const orderNumber = Number(number);
+  const isValidNumber = Number.isSafeInteger(orderNumber) && orderNumber > 0;
+
+  useEffect(() => {
+    if (isValidNumber) {
+      dispatch(fetchOrderByNumber(orderNumber));
+    }
+  }, [dispatch, orderNumber, isValidNumber]);
+
   const orderInfo = useMemo(() => {
-    if (!orderData || !ingredients.length) return null;
+    if (
+      !isValidNumber ||
+      !orderData ||
+      orderData.number !== orderNumber ||
+      !ingredients.length
+    ) {
+      return null;
+    }
 
     const date = new Date(orderData.createdAt);
 
     type TIngredientsWithCount = Record<string, TIngredient & { count: number }>;
 
     const ingredientsInfo = orderData.ingredients.reduce(
-      (acc: TIngredientsWithCount, item) => {
+      (acc: TIngredientsWithCount, item: string) => {
         if (!acc[item]) {
           const ingredient = ingredients.find((ing) => ing._id === item);
+
           if (ingredient) {
             acc[item] = {
               ...ingredient,
@@ -58,10 +73,24 @@ export const OrderInfo = (): React.JSX.Element => {
       date,
       total,
     };
-  }, [orderData, ingredients]);
+  }, [orderData, ingredients, orderNumber, isValidNumber]);
+
+  if (!isValidNumber) {
+    return <p className="text text_type_main-medium">Некорректный номер заказа</p>;
+  }
+
+  if (isLoading) {
+    return <Preloader />;
+  }
+
+  if (error) {
+    return (
+      <p className="text text_type_main-medium">Не удалось загрузить заказ: {error}</p>
+    );
+  }
 
   if (!orderInfo) {
-    return <Preloader />;
+    return <p className="text text_type_main-medium">Заказ не найден</p>;
   }
 
   return <OrderInfoUI orderInfo={orderInfo} />;

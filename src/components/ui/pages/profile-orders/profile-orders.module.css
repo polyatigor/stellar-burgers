@@ -1,5 +1,6 @@
 .menu {
   width: 320px;
+  flex-shrink: 0;
 }
 
 .main {
@@ -11,5 +12,6 @@
 }
 
 .orders {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
