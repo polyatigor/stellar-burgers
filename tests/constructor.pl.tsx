@@ -49,7 +49,7 @@ test.describe('Модальное окно ингредиента', () => {
     await page.goto('/');
   });
 
-  test('Открывает окно с данными ингредиента и закрывает по крестику', async ({
+  test('Показывает данные выбранного ингредиента и закрывается по крестику', async ({
     page
   }) => {
     const ingredients = page.getByTestId('ingredients-content');
@@ -58,9 +58,19 @@ test.describe('Модальное окно ингредиента', () => {
       .getByRole('listitem')
       .filter({ hasText: 'Тестовая булка' });
 
-    await bun.getByRole('link').click();
+    const filling = ingredients
+      .getByRole('listitem')
+      .filter({ hasText: 'Тестовая котлета' });
 
     const modal = page.locator('#modals');
+
+    const calories = modal
+      .getByText('Калории,ккал', { exact: true })
+      .locator('..')
+      .locator('p')
+      .nth(1);
+
+    await bun.getByRole('link').click();
 
     await expect(
       modal.getByRole('heading', { name: 'Детали ингредиента' })
@@ -70,11 +80,35 @@ test.describe('Модальное окно ингредиента', () => {
       modal.getByRole('heading', { name: 'Тестовая булка' })
     ).toBeVisible();
 
-    await expect(
-      modal.getByText('150', { exact: true })
-    ).toBeVisible();
+    await expect(calories).toHaveText('150');
 
     await expect(page).toHaveURL(/\/ingredients\/test-bun$/);
+
+    await modal.getByRole('button', { name: 'Закрыть' }).click();
+
+    await expect(
+      modal.getByRole('heading', { name: 'Детали ингредиента' })
+    ).toHaveCount(0);
+
+    await expect(page).toHaveURL('/');
+
+    await filling.getByRole('link').click();
+
+    await expect(
+      modal.getByRole('heading', { name: 'Детали ингредиента' })
+    ).toBeVisible();
+
+    await expect(
+      modal.getByRole('heading', { name: 'Тестовая котлета' })
+    ).toBeVisible();
+
+    await expect(calories).toHaveText('151');
+
+    await expect(
+      modal.getByRole('heading', { name: 'Тестовая булка' })
+    ).toHaveCount(0);
+
+    await expect(page).toHaveURL(/\/ingredients\/test-main$/);
 
     await modal.getByRole('button', { name: 'Закрыть' }).click();
 

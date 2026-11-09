@@ -37,6 +37,13 @@ const mockFillingTwo: TConstructorIngredient = {
   type: 'main'
 };
 
+const mockBunTwo: TConstructorIngredient = {
+  ...mockBun,
+  _id: '124',
+  id: 'bun-2',
+  name: 'Вторая булка'
+};
+
 describe('Тестирование constructorSlice', () => {
   test('Возвращает начальное состояние при неизвестном экшене', () => {
     const state = constructorReducer(undefined, { type: 'UNKNOWN' });
@@ -138,11 +145,35 @@ describe('Тестирование constructorSlice', () => {
       ingredients: [mockFilling, mockFillingTwo]
     };
 
-    const state = constructorReducer(
+    const stateWithNegativeIndex = constructorReducer(
+      initialState,
+      moveIngredient({ fromIndex: -1, toIndex: 0 })
+    );
+
+    expect(stateWithNegativeIndex).toEqual(initialState);
+
+    const stateWithLargeIndex = constructorReducer(
       initialState,
       moveIngredient({ fromIndex: 10, toIndex: 0 })
     );
 
-    expect(state).toEqual(initialState);
+    expect(stateWithLargeIndex).toEqual(initialState);
+  });
+
+  test('Заменяет булку и сохраняет все начинки', () => {
+    const initialState = {
+      bun: mockBun,
+      ingredients: [mockFilling, mockFillingTwo]
+    };
+
+    const state = constructorReducer(
+      initialState,
+      addIngredient(mockBunTwo)
+    );
+
+    expect(state).toEqual({
+      bun: mockBunTwo,
+      ingredients: [mockFilling, mockFillingTwo]
+    });
   });
 });
